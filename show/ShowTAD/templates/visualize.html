@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CSI数据可视化 - {{ filename }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        .chart-container { width: 90%; margin: 20px auto; }
+        .data-card { 
+            border: 1px solid #ddd; padding: 15px; margin: 10px; 
+            border-radius: 5px; background: #f9f9f9;
+        }
+        .header { display: flex; justify-content: space-between; align-items: center; }
+        .back-btn { padding: 5px 10px; background: #eee; border: 1px solid #ccc; }
+
+        .antena-selector-container {
+            display: flex;          /* 启用Flex布局 */
+            align-items: center;    /* 垂直居中对齐 */
+            gap: 16px;              /* 设置两个选择器之间的间距 */
+        }
+
+        .antena-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;               /* 标签和下拉框之间的间距 */
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>CLIPTAD可视化展示 - {{ filename }}</h1>
+        <a href="/" class="back-btn">返回上传</a>
+    </div>
+    
+    <div id="loading">正在加载数据...</div>
+    
+    <div id="content" style="display: none;">
+
+        <div class="chart-container">
+        <h2>幅度(AMP)数据</h2>
+        <div class="antena-selector-container">
+            <div class="antena-selector">
+                <label>发送天线选择: </label>
+                <select id="ampAntenna_transfer" onchange="updateCharts()">
+                    <option value="0">天线1</option>
+                    <option value="1">天线2</option>
+                    <option value="2">天线3</option>
+                </select>
+            </div>
+            <div class="antena-selector">
+                <label>接受天线选择: </label>
+                <select id="ampAntenna_receiver" onchange="updateCharts()">
+                    <option value="0">天线1</option>
+                    <option value="1">天线2</option>
+                    <option value="2">天线3</option>
+                </select>
+            </div>
+        </div>
+        <canvas id="ampChart"></canvas>
+        <div id="ampStats" class="data-card"></div>
+    </div>
+
+        
+
+        <div class="chart-container">
+            <h2>相位(PHA)数据</h2>
+            <!-- <div class="antena-selector">
+                <label>发送天线选择: </label>
+                <select id="phaAntenna_transfer" onchange="updateCharts()">
+                    <option value="0">天线1</option>
+                    <option value="1">天线2</option>
+                    <option value="2">天线3</option>
+                </select>
+            </div>
+            <div class="antena-selector">
+                <label>接受天线选择: </label>
+                <select id="phaAntenna_receiver" onchange="updateCharts()">
+                    <option value="0">天线1</option>
+                    <option value="1">天线2</option>
+                    <option value="2">天线3</option>
+                </select>
+            </div> -->
+            <div class="antena-selector-container">
+                <div class="antena-selector">
+                    <label>发送天线选择: </label>
+                    <select id="phaAntenna_transfer" onchange="updateCharts()">
+                        <option value="0">天线1</option>
+                        <option value="1">天线2</option>
+                        <option value="2">天线3</option>
+                    </select>
+                </div>
+                <div class="antena-selector">
+                    <label>接受天线选择: </label>
+                    <select id="phaAntenna_receiver" onchange="updateCharts()">
+                        <option value="0">天线1</option>
+                        <option value="1">天线2</option>
+                        <option value="2">天线3</option>
+                    </select>
+                </div>
+            </div>
+            <canvas id="phaChart"></canvas>
+            <div id="phaStats" class="data-card"></div>
+        </div>
+<!-- 
+        <div class="chart-container">
+            <h2>真实标签</h2>
+            <pre id="labelData"></pre>
+        </div> -->
+
+        <div class="chart-container">
+            <h2>IMU 数据</h2>
+            <div class="antena-selector-container">
+                <div class="antena-selector">
+                    <label>使用设备选择: </label>
+                    <select id="imu_id" onchange="updateCharts()">
+                        <option value="0">设备0</option>
+                        <option value="1">设备1</option>
+                        <option value="2">设备2</option>
+                        <option value="3">设备3</option>
+                        <option value="4">设备4</option>
+                    </select>
+                </div>
+                <div class="antena-selector">
+                    <label>收集数据类型选择: </label>
+                    <select id="imu_chosse" onchange="updateCharts()">
+                        <option value="0">x方向速度</option>
+                        <option value="1">y方向速度</option>
+                        <option value="2">z方向速度</option>
+                        <option value="3">x方向加速度</option>
+                        <option value="4">y方向加速度</option>
+                        <option value="5">z方向加速度</option>
+                    </select>
+                </div>
+            </div>
+            <canvas id="imuChart"></canvas>
+            <div id="imuStats" class="data-card"></div>
+        </div>
+
+        <div class="chart-container">
+            <h2>真实标签详情</h2>
+            <table id="labelTable" class="styled-table">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>动作</th>
+                        <th>开始时间(ms)</th>
+                        <th>结束时间(ms)</th>
+                        <th>持续时间(ms)</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="chart-container">
+            <h2>预测标签详情</h2>
+            <table id="PredictTable" class="styled-table">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>动作</th>
+                        <th>开始时间(ms)</th>
+                        <th>结束时间(ms)</th>
+                        <th>持续时间(ms)</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <!-- <div class="chart-container">
+            <h2>预测标签</h2>
+            <pre id="labelData"></pre>
+        </div> -->
+    </div>
+
+    <style>
+        .styled-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            font-size: 0.9em;
+            font-family: sans-serif;
+            min-width: 400px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+        }
+        .styled-table thead tr {
+            background-color: #4285f4;
+            color: #ffffff;
+            text-align: left;
+        }
+        .styled-table th,
+        .styled-table td {
+            padding: 12px 15px;
+        }
+        .styled-table tbody tr {
+            border-bottom: 1px solid #dddddd;
+        }
+        .styled-table tbody tr:nth-of-type(even) {
+            background-color: #f3f3f3;
+        }
+        .styled-table tbody tr:last-of-type {
+            border-bottom: 2px solid #4285f4;
+        }
+        .styled-table tbody tr:hover {
+            background-color: #f1f8ff;
+            cursor: pointer;
+        }
+        </style>
+
+    <script>
+        let csiData = {};
+        let ampChart, phaChart;
+
+        async function loadData() {
+            const loadingElement = document.getElementById('loading');
+            const contentElement = document.getElementById('content');
+            
+            try {
+                loadingElement.textContent = "正在加载数据...";
+                
+                const response = await axios.get('/api/analyze');
+                
+                if (!response.data.success) {
+                    throw new Error(response.data.error || "未知分析错误");
+                }
+                
+                csiData = response.data;
+                loadingElement.style.display = 'none';
+                contentElement.style.display = 'block';
+                
+                renderStats();
+                initCharts();
+                // document.getElementById('labelData').textContent =
+                //     JSON.stringify(csiData.labels, null, 2);
+                renderTable();
+                renderTable_predict();
+                
+                    
+            } catch (error) {
+                console.error("分析错误:", error);
+                loadingElement.innerHTML = `
+                    <div style="color: red;">
+                        <p>数据分析失败: ${error.message}</p>
+                        <p>可能原因：</p>
+                        <ul>
+                            <li>上传的文件格式不正确</li>
+                            <li>文件不包含必需的amp/pha数据集</li>
+                            <li>服务器处理超时</li>
+                        </ul>
+                        <button onclick="window.location.href='/'" style="padding: 5px 10px;">
+                            返回上传页面
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
+        function renderTable_predict(){
+            const tbody = document.querySelector('#PredictTable tbody');
+
+            labels = csiData.predict_labels
+            console.log('hihi', labels)
+            tbody.innerHTML = '';
+            let index = 1;
+            labels.forEach(label => {
+                if (Array.isArray(label)) {
+                    const [action, start, end] = label;
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index++}</td>
+                        <td>${action}</td>
+                        <td>${start}</td>
+                        <td>${end}</td>
+                        <td>${end - start}</td>
+                    `;
+                    tbody.appendChild(row);
+                }
+            });
+        }
+
+        function renderTable() {
+            const tbody = document.querySelector('#labelTable tbody');
+
+            labels = csiData.labels
+            console.log('hihi', labels)
+            tbody.innerHTML = '';
+            
+            let index = 1;
+            labels.forEach(label => {
+                if (Array.isArray(label)) {
+                    const [id, action, start, end] = label;
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index++}</td>
+                        <td>${action}</td>
+                        <td>${start}</td>
+                        <td>${end}</td>
+                        <td>${end - start}</td>
+                    `;
+                    tbody.appendChild(row);
+                }
+            });
+        }
+
+        function renderStats() {
+            document.getElementById('ampStats').innerHTML = `
+                <h3>AMP统计信息</h3>
+                <p>数据形状: ${csiData.amp.full_shape.join(' × ')}</p>
+                <p>均值: ${csiData.amp.stats.mean.toFixed(4)}</p>
+                <p>最大值: ${csiData.amp.stats.max.toFixed(4)}</p>
+                <p>最小值: ${csiData.amp.stats.min.toFixed(4)}</p>
+            `;
+            
+            document.getElementById('phaStats').innerHTML = `
+                <h3>PHA统计信息</h3>
+                <p>数据形状: ${csiData.pha.full_shape.join(' × ')}</p>
+                <p>均值: ${csiData.pha.stats.mean.toFixed(4)}</p>
+                <p>最大值: ${csiData.pha.stats.max.toFixed(4)}</p>
+                <p>最小值: ${csiData.pha.stats.min.toFixed(4)}</p>
+            `;
+            
+            // console.log('hello', csiDat.stats_imu)
+            
+            // document.getElementById('imuStats').innerHTML = `
+            //     <h3>imu统计信息</h3>
+            //     <p>数据形状: ${csiData.full_shape_imu.join(' × ')}</p>
+            //     <p>均值: ${csiDat.stats_imu.mean.toFixed(4)}</p>
+            //     <p>最大值: ${csiData.stats_imu.max.toFixed(4)}</p>
+            //     <p>最小值: ${csiData.stats_imu.min.toFixed(4)}</p>
+            // `;
+        }
+
+        function initCharts() {
+            const ctx1 = document.getElementById('ampChart').getContext('2d');
+            const ctx2 = document.getElementById('phaChart').getContext('2d');
+            const ctx3 = document.getElementById('imuChart').getContext('2d');
+            
+            ampChart = new Chart(ctx1, createChartConfig('AMP', csiData.amp.sample_data));
+            phaChart = new Chart(ctx2, createChartConfig('PHA', csiData.pha.sample_data));
+            imuChart = new Chart(ctx3, createChartConfig2('IMU', csiData.sample_data_imu));
+
+            const ampAntenna_transfer = document.getElementById('ampAntenna_transfer').value;
+            const ampAntenna_receiver = document.getElementById('ampAntenna_receiver').value;
+
+
+            const phaAntenna_transfer = document.getElementById('phaAntenna_transfer').value;
+            const phaAntenna_receiver = document.getElementById('phaAntenna_receiver').value;
+
+            const imu_id = document.getElementById('imu_id').value;
+            const imu_chosse = document.getElementById('imu_chosse').value;
+
+
+            ampChart.data.datasets.forEach((dataset, i) => {
+                dataset.data = csiData.amp.sample_data[i][0][0];
+            });
+           
+            ampChart.update();
+            
+            phaChart.data.datasets.forEach((dataset, i) => {
+                dataset.data = csiData.pha.sample_data[i][0][0];
+            });
+            phaChart.update();
+
+            imuChart.data.datasets.forEach((dataset, i) => {
+                dataset.data = csiData.sample_data_imu[0][0];
+            });
+            imuChart.update();
+
+
+        }
+
+        function updateCharts() {
+            const ampAntenna_transfer = document.getElementById('ampAntenna_transfer').value;
+            const ampAntenna_receiver = document.getElementById('ampAntenna_receiver').value;
+
+
+            const phaAntenna_transfer = document.getElementById('phaAntenna_transfer').value;
+            const phaAntenna_receiver = document.getElementById('phaAntenna_receiver').value;
+
+            const imu_id = document.getElementById('imu_id').value;
+            const imu_chosse = document.getElementById('imu_chosse').value;
+
+            // console.log('ppp', ampAntenna)
+            
+            // console.log('hihihi', ampChart.data.datasets);
+            // console.log('bybyby', csiData.amp.sample_data)
+            ampChart.data.datasets.forEach((dataset, i) => {
+                
+                dataset.data = csiData.amp.sample_data[i][ampAntenna_transfer][ampAntenna_receiver];
+               
+            });
+           
+
+
+            ampChart.update();
+            
+            phaChart.data.datasets.forEach((dataset, i) => {
+                // dataset.data = csiData.pha.sample_data.map(item => item[phaAntenna][i]);
+                dataset.data = csiData.pha.sample_data[i][phaAntenna_transfer][phaAntenna_receiver];
+            });
+            phaChart.update();
+
+
+            imuChart.data.datasets.forEach((dataset, i) => {
+                dataset.data = csiData.sample_data_imu[imu_id][imu_chosse];
+            });
+            imuChart.update();
+        }
+
+        function createChartConfig(title, sampleData) {
+            const subcarriersToShow = 6;
+            const datasets = [];
+            
+            for (let i = 0; i < subcarriersToShow; i++) {
+                datasets.push({
+                    label: `子载波 ${i+1}`,
+                    data: sampleData.map(item => item[0][i]),
+                    borderColor: `hsl(${i * 360 / subcarriersToShow}, 70%, 50%)`,
+                    borderWidth: 1,
+                    fill: false
+                });
+            }
+            
+            return {
+                type: 'line',
+                data: {
+                    labels: csiData.time_points,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: { display: true, text: title }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: '时间点' } },
+                        y: { title: { display: true, text: '值' } }
+                    }
+                }
+            };
+        }
+
+        function createChartConfig2(title, sampleData) {
+      
+            const datasets = [];
+            
+
+            datasets.push({
+                    label: `imu信号`,
+                    data: sampleData.map(item => item[0]),
+                    borderColor: `hsl(${1 * 360}, 70%, 50%)`,
+                    borderWidth: 1,
+                    fill: false
+                });
+
+            
+            return {
+                type: 'line',
+                data: {
+                    labels: csiData.time_points,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: { display: true, text: title }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: '时间点' } },
+                        y: { title: { display: true, text: '值' } }
+                    }
+                }
+            };
+        }
+
+        window.onload = loadData;
+    </script>
+</body>
+
+
+</html>
+

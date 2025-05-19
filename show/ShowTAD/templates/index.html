@@ -1,0 +1,159 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>TAD任务可视化展示</title>
+    <style>
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .upload-box { border: 2px dashed #ccc; padding: 30px; text-align: center; margin-bottom: 20px; }
+        .error { color: red; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>上传H5文件</h1>
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+        <form method="post" enctype="multipart/form-data" class="upload-box">
+            <input type="file" name="file" accept=".h5" required>
+
+            <button type="submit">上传并分析</button>
+        </form>
+    </div>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAD任务可视化展示</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 30px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .upload-section {
+            margin-bottom: 25px;
+        }
+        .upload-box {
+            border: 2px dashed #3498db;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        .upload-box:hover {
+            border-color: #2980b9;
+            background-color: #e8f4fc;
+        }
+        .file-input {
+            margin: 15px 0;
+            display: block;
+            width: 100%;
+        }
+        .file-type-hint {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        .error {
+            color: #e74c3c;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #fadbd8;
+            border-radius: 4px;
+            text-align: center;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 20px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .file-label {
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: block;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TAD任务数据上传</h1>
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+        
+        <form method="post" enctype="multipart/form-data", onsubmit="return checkFilenames()">
+            <div class="upload-section">
+                <label class="file-label">WiFi CSI数据文件</label>
+                <div class="upload-box">
+                    <input type="file" name="wifi_file" accept=".h5" class="file-input" required>
+                    <div class="file-type-hint">请上传包含WiFi信道状态信息(CSI)的.h5文件</div>
+                </div>
+            </div>
+            
+            <div class="upload-section">
+                <label class="file-label">IMU传感器数据文件</label>
+                <div class="upload-box">
+                    <input type="file" name="imu_file" accept=".h5" class="file-input" required>
+                    <div class="file-type-hint">请上传包含惯性测量单元(IMU)数据的.h5文件</div>
+                </div>
+            </div>
+            
+            <button type="submit">上传并分析数据</button>
+        </form>
+    </div>
+</body>
+
+<script>
+    function checkFilenames() {
+        const wifiInput = document.querySelector('input[name="wifi_file"]');
+        const imuInput = document.querySelector('input[name="imu_file"]');
+        
+        // 检查是否已选择文件
+        if (!wifiInput.files[0] || !imuInput.files[0]) {
+            alert("请先选择两个文件");
+            return false;
+        }
+    
+        const wifiName = wifiInput.files[0].name;  // 获取文件名（如 "data.h5"）
+        const imuName = imuInput.files[0].name;
+    
+        if (wifiName !== imuName) {
+            alert("两个文件需匹配");
+            return false; // 阻止表单提交
+        }
+        return true;
+    }
+    </script>
+</html>
